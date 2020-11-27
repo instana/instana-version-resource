@@ -1,0 +1,38 @@
+#!/bin/bash
+
+set -x
+set -e
+set -u
+set -o pipefail
+
+exec 3>&1
+exec 1>&2
+
+echo "Retrieving latest Instana Backend version"
+
+readonly input_file=$(mktemp input.XXXXXX)
+
+cat > "${input_file}" <&0
+
+# Delete trailing `/`, as it can create issues when composing URLs later
+readonly endpoint=$(jq -r .source.endpoint < "${input_file}" | sed "s,/$,,")
+readonly api_token=$(jq -r .source.api_token < "${input_file}")
+
+readonly URL_REGEXP='https?://[-A-Za-z0-9\.]+(:[0-9]+)?'
+
+if [ -z "${endpoint}" ]; then
+    echo "Invalid payload: missing 'endpoint'"
+    exit 1
+elif ! [[ "${endpoint}" =~ ${URL_REGEXP} ]]; then 
+    echo "Invalid payload: the value '${endpoint}' for 'endpoint' is not valid; endpoint must match the followinf regex: ${URL_REGEXP}"
+    exit 1
+fi
+
+if [ -z "${api_token}" ]; then
+    echo "Invalid payload: missing 'api_token'"
+    exit 1
+fi
+
+echo "Using the API endpoint: ${endpoint}/api/instana/version"
+
+curl --silent --show-error --fail --header "Authorization: apiToken ${api_token}" "${endpoint}/api/instana/version" | jq -e '.branch' | sed s/release-// | jq '[{ release: . }]' >&3
