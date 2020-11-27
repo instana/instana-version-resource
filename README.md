@@ -49,6 +49,6 @@ The test scripts assumes a local Docker daemon.
 ## Contributing
 
 Ah, our kind of person!
-Go ahead, open a PR.
+Go ahead, open a Pull Request.
 
 Please be aware that we will be able to accept only code contributed under the Apache 2.0 license.
