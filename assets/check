@@ -17,14 +17,15 @@ cat > "${input_file}" <&0
 # Delete trailing `/`, as it can create issues when composing URLs later
 readonly endpoint=$(jq -r .source.endpoint < "${input_file}" | sed "s,/$,,")
 readonly api_token=$(jq -r .source.api_token < "${input_file}")
+readonly granularity=$(jq -r '.source.granularity // "branch"' < "${input_file}")
 
 readonly URL_REGEXP='https?://[-A-Za-z0-9\.]+(:[0-9]+)?'
 
 if [ -z "${endpoint}" ]; then
     echo "Invalid payload: missing 'endpoint'"
     exit 1
-elif ! [[ "${endpoint}" =~ ${URL_REGEXP} ]]; then 
-    echo "Invalid payload: the value '${endpoint}' for 'endpoint' is not valid; endpoint must match the followinf regex: ${URL_REGEXP}"
+elif ! [[ "${endpoint}" =~ ${URL_REGEXP} ]]; then
+    echo "Invalid payload: the value '${endpoint}' for 'endpoint' is not valid; endpoint must match the following regex: ${URL_REGEXP}"
     exit 1
 fi
 
@@ -35,4 +36,36 @@ fi
 
 echo "Using the API endpoint: ${endpoint}/api/instana/version"
 
-curl --silent --show-error --fail --header "Authorization: apiToken ${api_token}" "${endpoint}/api/instana/version" | jq -e '.branch' | sed s/release-// | jq '[{ release: . }]' >&3
+readonly data=$(curl --silent --show-error --fail --header "Authorization: apiToken ${api_token}" "${endpoint}/api/instana/version")
+readonly branch=$(echo "${data}" | jq -er '.branch' | sed s/release-//)
+
+readonly imageTag=$(echo "${data}" | jq -er '.imageTag')
+readonly versions=( ${imageTag//./ } )
+
+readonly major="${versions[0]}"
+readonly minor="${versions[1]}"
+readonly patch="${versions[2]}"
+
+case "${granularity}" in
+   branch)
+     version="${branch}"
+     ;;
+   full)
+     version="${imageTag}"
+     ;;
+   major)
+     version="${major}"
+     ;;
+   minor)
+     version="${major}.${minor}"
+     ;;
+   patch)
+     version="${major}.${minor}.${patch}"
+     ;;
+   *)
+     echo "Invalid granularity '$granularity'. Must be one of 'branch', 'full', 'major', 'minor' or 'patch'."
+     exit 1
+     ;;
+esac
+
+echo "[{ \"release\": \"$version\" }]" >&3
