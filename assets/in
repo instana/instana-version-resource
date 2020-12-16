@@ -55,10 +55,9 @@ readonly major="${versions[0]}"
 readonly minor="${versions[1]}"
 readonly patch="${versions[2]}"
 
-version=""
-case "$granularity" in
+case "${granularity}" in
    branch)
-      version="${branch}"
+     version="${branch}"
      ;;
    full)
      version="${imageTag}"
