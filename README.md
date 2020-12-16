@@ -14,7 +14,7 @@ This [Concourse](https://concourse-ci.org/) resource allows you to track the ver
 resource_types:
 
   - name: instana-version
-    type: docker-image
+    type: registry-image
     source:
       repository: instana/instana-version-resource
       tag: latest
@@ -26,6 +26,7 @@ resources:
     source:
       endpoint: https://awesome-tenant.instana.io
       api_token: ((instana_api_token)) # Use secrets if you can!
+      granularity: minor # optional, defaults to 'branch', one of 'branch', 'full', 'major', 'minor' or 'patch'
 ```
 
 ## Behaviour
@@ -34,7 +35,12 @@ resources:
 
 The resource will create the following file:
 
-* `release`, containing, e.g., `190`
+* `release`, containing, e.g., `191`
+* `image_tag`, the full version, e.g. `2.191.519-0`
+* `branch`, the currently deployed release branch, e.g. `191`
+* `major`, the currently deployed major version e.g. `2`
+* `minor`, the currently deployed minor version e.g. `191` 
+* `patch`, the currently deployed minor version e.g. `519-0` 
 
 ## Support
 
