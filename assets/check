@@ -17,7 +17,8 @@ cat > "${input_file}" <&0
 # Delete trailing `/`, as it can create issues when composing URLs later
 readonly endpoint=$(jq -r .source.endpoint < "${input_file}" | sed "s,/$,,")
 readonly api_token=$(jq -r .source.api_token < "${input_file}")
-readonly granularity=$(jq -r '.source.granularity // "branch"' < "${input_file}")
+readonly granularity=$(jq -r '.source.granularity // ""' < "${input_file}")
+format=$(jq -r '.source.format // ""' < "${input_file}")
 
 readonly URL_REGEXP='https?://[-A-Za-z0-9\.]+(:[0-9]+)?'
 
@@ -34,6 +35,11 @@ if [ -z "${api_token}" ]; then
     exit 1
 fi
 
+if [ -n "${format}" ] && [ -n "${granularity}" ]; then
+  echo "Both 'format' and 'granularity' have been specified, invalid configuration"
+  exit 1
+fi
+
 echo "Using the API endpoint: ${endpoint}/api/instana/version"
 
 readonly data=$(curl --silent --show-error --fail --header "Authorization: apiToken ${api_token}" "${endpoint}/api/instana/version")
@@ -46,26 +52,39 @@ readonly major="${versions[0]}"
 readonly minor="${versions[1]}"
 readonly patch="${versions[2]}"
 
-case "${granularity}" in
-   branch)
-     version="${branch}"
-     ;;
-   full)
-     version="${imageTag}"
-     ;;
-   major)
-     version="${major}"
-     ;;
-   minor)
-     version="${major}.${minor}"
-     ;;
-   patch)
-     version="${major}.${minor}.${patch}"
-     ;;
-   *)
-     echo "Invalid granularity '$granularity'. Must be one of 'branch', 'full', 'major', 'minor' or 'patch'."
-     exit 1
-     ;;
-esac
+if [ -n "${granularity}" ]; then
+  case "${granularity}" in
+  branch)
+    format='%branch%'
+    ;;
+  full)
+    format='%full%'
+    ;;
+  major)
+    format='%major%'
+    ;;
+  minor)
+    format='%major%.%minor%'
+    ;;
+  patch)
+    format='%major%.%minor%.%patch%'
+    ;;
+  *)
+    echo "Invalid granularity '$granularity'. Must be one of 'branch', 'full', 'major', 'minor' or 'patch'."
+    exit 1
+    ;;
+  esac
+fi
+
+if [ -z "${format}" ]; then
+  format='%branch%'
+fi
+
+version="${format}"
+version="${version//%branch%/${branch}}"
+version="${version//%full%/${imageTag}}"
+version="${version//%major%/${major}}"
+version="${version//%minor%/${minor}}"
+version="${version//%patch%/${patch}}"
 
 echo "[{ \"release\": \"$version\" }]" >&3
