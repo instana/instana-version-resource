@@ -26,21 +26,39 @@ resources:
     source:
       endpoint: https://awesome-tenant.instana.io
       api_token: ((instana_api_token)) # Use secrets if you can!
-      granularity: minor # optional, defaults to 'branch', one of 'branch', 'full', 'major', 'minor' or 'patch'
+      granularity: minor # optional, defaults to ""; valid values are: 'branch', 'full', 'major', 'minor' or 'patch'
+      format: # optional, defaults to "%branch%"
 ```
 
 ## Behaviour
 
 ### In
 
+Supports the following parameters:
+
+* `format` provides a formatting pattern for the release.
+  The following tokens are replaced in the provided format string:
+  * `%branch%` will be replaced with the currently deployed release branch, e.g. `191`
+  * `%full%` will be replaced with the currently deployed major version e.g. `2`
+  * `%major%` will be replaced with the currently deployed minor version e.g. `191`
+  * `%patch%` will be replaced with the currently deployed patch version e.g. `519-0`
+
+* `granularity` provides short-hands for `format` as follows:
+  * `branch` -> `%branch%`
+  * `full` -> `%full%`
+  * `major` -> `%major%.%minor%`
+  * `patch` -> `%major%.%minor%.%patch%`
+
+**Note:** Using both `format` and `granularity` is not allowed, and the resource will fail.
+
 The resource will create the following file:
 
-* `release`, containing, e.g., `191`
+* `release`, containing the formatted version based on the value of the `format` parameter
 * `image_tag`, the full version, e.g. `2.191.519-0`
 * `branch`, the currently deployed release branch, e.g. `191`
 * `major`, the currently deployed major version e.g. `2`
-* `minor`, the currently deployed minor version e.g. `191` 
-* `patch`, the currently deployed minor version e.g. `519-0` 
+* `minor`, the currently deployed minor version e.g. `191`
+* `patch`, the currently deployed patch version e.g. `519-0`
 
 ## Support
 
