@@ -32,7 +32,7 @@ jobs:
           outputs:
             - name: image
           params:
-            CONTEXT: artifactory-resource-source
+            CONTEXT: instana-version-resource-source
           run:
             path: build
       - put: instana-version-resource-image-icr
