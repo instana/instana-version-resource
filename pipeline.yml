@@ -1,0 +1,40 @@
+resources:
+  - name: instana-version-resource-source
+    type: git
+    icon: gihub
+    source:
+      uri: https://github.com/instana/instana-version-resource.git
+      branch: ((branch))
+  - name: instana-version-resource-image-icr
+    type: registry-image
+    icon: docker
+    source:
+      repository: icr.io/instana/instana-version-resource
+      username: iamapikey
+      password: ((concourse-icr-containers-public.password))
+      tag: latest
+
+jobs:
+  - name: build-and-publish
+    plan:
+      - get: instana-version-resource-source
+        trigger: true
+      - task: image-build
+        privileged: true
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+            - name: instana-version-resource-source
+          outputs:
+            - name: image
+          params:
+            CONTEXT: artifactory-resource-source
+          run:
+            path: build
+      - put: instana-version-resource-image-icr
+        params:
+          image: image/image.tar
