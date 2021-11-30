@@ -16,7 +16,7 @@ resource_types:
   - name: instana-version
     type: registry-image
     source:
-      repository: instana/instana-version-resource
+      repository: icr.io/instana/instana-version-resource
       tag: latest
 
 resources:
