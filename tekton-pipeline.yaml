@@ -8,6 +8,12 @@ spec:
     - name: branch
       type: string
       default: "main"
+    - name: icr-username
+      type: string
+      default: "iamapikey"
+    - name: icr-password
+      type: string
+      default: ""
   workspaces:
     - name: output
   tasks:
@@ -32,10 +38,10 @@ spec:
             value: instana-version-resource
         steps:
           - name: build-instana-version-resource-image
-            image: icr.io/instana/oci-build-task:latest
+            image: registry.access.redhat.com/ubi8/podman:latest
             script: |
-              docker build -t instana-version-resource:latest $(params.cloned-dir) 
-              docker save -o /workspace/output/instana-version-resource.tar instana-version-resource:latest
+              podman build -t instana-version-resource:latest $(params.cloned-dir)
+              podman save -o /workspace/output/instana-version-resource.tar instana-version-resource:latest
         workspaces:
           - name: output
       runAfter:
@@ -43,21 +49,25 @@ spec:
       params:
         - name: cloned-dir
           value: /workspace/output/instana-version-resource
-      
 
     - name: publish-instana-version-resource-image
       taskSpec:
         params:
           - name: image-tar
             type: string
+            default: "/workspace/output/instana-version-resource.tar"
         steps:
           - name: publish-instana-version-resource-image
-            image: icr.io/instana/instana-version-resource:latest
+            image: registry.access.redhat.com/ubi8/podman:latest
             script: |
-              docker load -i $(workspaces.output.path)/instana-version-resource.tar
-              docker tag instana-version-resource:latest icr.io/instana/instana-version-resource:latest
-              docker push icr.io/instana/instana-version-resource:latest
+              podman load -i $(params.image-tar)
+              podman tag instana-version-resource:latest icr.io/instana/instana-version-resource:latest
+              podman login icr.io -u $(params.icr-username) -p $(params.icr-password)
+              podman push icr.io/instana/instana-version-resource:latest
         workspaces:
           - name: output
       runAfter:
         - build-instana-version-resource-image
+      params:
+        - name: image-tar
+          value: /workspace/output/instana-version-resource.tar
