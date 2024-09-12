@@ -35,7 +35,7 @@ spec:
         params:
           - name: cloned-dir
             type: string
-            value: instana-version-resource
+            value: default
         steps:
           - name: build-instana-version-resource-image
             image: registry.access.redhat.com/ubi8/podman:latest
