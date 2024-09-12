@@ -48,7 +48,7 @@ spec:
         - git-clone
       params:
         - name: cloned-dir
-          value: /workspace/output/instana-version-resource
+          value: default
 
     - name: publish-instana-version-resource-image
       taskSpec:
